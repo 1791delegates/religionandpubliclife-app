@@ -1,3 +1,8 @@
+import ProgressCircleComponent from "./components/Progress";
+
 export const applyCustomCode = externalCodeSetup => {
-	// call custom code api here
+	const {cssApi, screenHooksApi} = externalCodeSetup;
+	cssApi.addCustomColors({headerIconColor: "#fafbfd"});
+
+	screenHooksApi.setProgressCircleComponent(ProgressCircleComponent);
 };
