@@ -54,8 +54,8 @@ export const applyCustomCode = externalCodeSetup => {
 				return require("./assets/Clubs.png");
 			case "videos":
 				return require("./assets/Videos.png");
-			// case "Feed":
-			// 	return require("./assets/ReportaBug.png");
+			case "Feed":
+				return require("./assets/Feed.png");
 			case "Members":
 				return require("./assets/Members.png");
 			case "Discussions":
