@@ -2,6 +2,8 @@ import React from "react";
 import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
+import SignupScreen from "./containers/SignupScreen";
+import {signup} from "./epics/signup";
 
 export const applyCustomCode = externalCodeSetup => {
 	const {
@@ -11,7 +13,8 @@ export const applyCustomCode = externalCodeSetup => {
 		settingsScreenApi,
 		profileScreenHooksApi,
 		socialGroupSingleApi,
-		navigationApi
+		navigationApi,
+		reduxApi
 	} = externalCodeSetup;
 
 	cssApi.addCustomColors({headerIconColor: "#fafbfd"});
@@ -92,10 +95,19 @@ export const applyCustomCode = externalCodeSetup => {
 		});
 	});
 
+	reduxApi.addEpic("signup", signup);
+
 	navigationApi.addNavigationRoute(
 		"TopicsSingleScreen",
 		"TopicsSingleScreen",
 		TopicsSingleScreen,
 		"All"
+	);
+
+	navigationApi.addNavigationRoute(
+		"SignupScreen",
+		"SignupScreen",
+		SignupScreen,
+		"Auth"
 	);
 };
