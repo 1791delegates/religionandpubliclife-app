@@ -90,7 +90,7 @@ class SignupScreen extends React.Component {
 			modalContent: null,
 			modalHeader: null,
 			avatar: null,
-			avatarMime: null
+			avatarData: null
 		};
 	}
 
@@ -139,11 +139,7 @@ class SignupScreen extends React.Component {
 		signupEmail: string
 	}) => {
 		if (this.state.avatar) {
-			data.append("avatar", {
-				uri: this.state.avatar,
-				type: this.state.avatarMime,
-				name: "avatar"
-			});
+			data.append("file", this.state.avatarData);
 		}
 
 		if (this.props.signup.isFetching || this.state.disableButton) {
@@ -288,7 +284,7 @@ class SignupScreen extends React.Component {
 			image.mime === "image/png" ||
 			image.mime === "image/gif"
 		) {
-			this.setState({avatar: image.path, avatarMime: image.mime});
+			this.setState({avatar: image.path, avatarData: image});
 		} else {
 			alert("You have selected an invalid image file type");
 		}
