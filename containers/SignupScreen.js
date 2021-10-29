@@ -176,7 +176,8 @@ class SignupScreen extends React.Component {
 					null
 				)
 				.then(r => {
-					data.append("avatar", r.data);
+					data.append("avatar", r.data?.avatar_path);
+					data.append("avatar_url", r.data?.avatar_url);
 					this.props.signupRequested(data);
 					this.setState({loading: false});
 				});
