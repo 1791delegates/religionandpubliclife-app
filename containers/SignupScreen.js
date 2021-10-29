@@ -61,6 +61,7 @@ import {UserAgreementText} from "@src/components/Auth/UserAgreementText";
 import {withSafeAreaInsets} from "react-native-safe-area-context";
 import AppImage from "@src/components/AppImage";
 import ProfileAvatarUpload from "../components/ProfileAvatarUpload";
+import {getApi} from "@src/services/index";
 
 type State = {
 	footerVisible: boolean,
@@ -90,7 +91,8 @@ class SignupScreen extends React.Component {
 			modalContent: null,
 			modalHeader: null,
 			avatar: null,
-			avatarData: null
+			avatarData: null,
+			loading: false
 		};
 	}
 
@@ -138,11 +140,11 @@ class SignupScreen extends React.Component {
 		data: RegisterParams,
 		signupEmail: string
 	}) => {
-		if (this.state.avatar) {
-			data.append("file", this.state.avatarData);
-		}
-
-		if (this.props.signup.isFetching || this.state.disableButton) {
+		if (
+			this.props.signup.isFetching ||
+			this.state.disableButton ||
+			this.state.loading
+		) {
 			return false;
 		}
 
@@ -156,7 +158,31 @@ class SignupScreen extends React.Component {
 			return true;
 		}
 
-		this.props.signupRequested(data);
+		if (this.state.avatar) {
+			this.setState({loading: true});
+			let {config, t} = this.props;
+			let api = getApi(config);
+			const avatarData = new FormData();
+			avatarData.append("avatar", {
+				uri: this.state.avatarData.path,
+				type: this.state.avatarData.mime,
+				name: "avatar"
+			});
+			api
+				.requestPostMultipart(
+					`wp-json/buddyboss/religion/v1/profile-photo-upload`,
+					avatarData,
+					null,
+					null
+				)
+				.then(r => {
+					data.append("avatar", r.data);
+					this.props.signupRequested(data);
+					this.setState({loading: false});
+				});
+		} else {
+			this.props.signupRequested(data);
+		}
 	};
 
 	_keyboardDidShow = () => {
@@ -447,7 +473,7 @@ class SignupScreen extends React.Component {
 											isAgreementChecked: withUserAgreementCheckbox
 												? this.state.agreementChecked
 												: true,
-											signupInProgress: signup.isFetching,
+											signupInProgress: signup.isFetching || this.state.loading,
 											signupRequest: this._signup,
 											scrollViewRef: this.scrollViewRef,
 											renderAgreementComponent: () =>

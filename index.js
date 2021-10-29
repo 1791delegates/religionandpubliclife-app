@@ -3,7 +3,6 @@ import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
 import SignupScreen from "./containers/SignupScreen";
-import {signup} from "./epics/signup";
 
 export const applyCustomCode = externalCodeSetup => {
 	const {
@@ -94,8 +93,6 @@ export const applyCustomCode = externalCodeSetup => {
 			return {...Tab, icon: customIconFilter(Tab.label, Tab.icon)};
 		});
 	});
-
-	reduxApi.addEpic("signup", signup);
 
 	navigationApi.addNavigationRoute(
 		"TopicsSingleScreen",
