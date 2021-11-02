@@ -166,7 +166,7 @@ class SignupScreen extends React.Component {
 			avatarData.append("avatar", {
 				uri: this.state.avatarData.path,
 				type: this.state.avatarData.mime,
-				name: "avatar"
+				name: this.state.avatarData.filename
 			});
 			api
 				.requestPostMultipart(
