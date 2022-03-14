@@ -1,4 +1,7 @@
 import React from "react";
+import {View, StyleSheet, Text} from "react-native";
+import {isColorDark} from "@src/utils";
+import Icon from "@src/components/Icon";
 import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
@@ -13,10 +16,13 @@ export const applyCustomCode = externalCodeSetup => {
 		profileScreenHooksApi,
 		socialGroupSingleApi,
 		navigationApi,
-		reduxApi
+		reduxApi,
+		lessonSingleScreenApi
 	} = externalCodeSetup;
 
 	cssApi.addCustomColors({headerIconColor: "#fafbfd"});
+	cssApi.addCustomColors({warningColor: "#8C0087"});
+
 	screenHooksApi.setProgressCircleComponent(ProgressCircleComponent);
 	blocksApi.addCustomBlockRender("core/paragraph", props => (
 		<ParagraphBlock {...props} />
@@ -106,5 +112,66 @@ export const applyCustomCode = externalCodeSetup => {
 		"SignupScreen",
 		SignupScreen,
 		"Auth"
+	);
+	lessonSingleScreenApi.setTransformLessonActionButtons(
+		(
+			LessonActionBtn,
+			showComplete,
+			global,
+			colors,
+			lesson,
+			completing,
+			labels
+		) => {
+			return lesson.completed ? (
+				<View
+					style={[
+						global.row,
+						{
+							zIndex: 1,
+							paddingHorizontal: 15,
+							paddingVertical: 15,
+							backgroundColor: colors.bodyFrontBg,
+							borderTopColor: colors.borderColor,
+							borderTopWidth: StyleSheet.hairlineWidth
+						}
+					]}
+				>
+					<View
+						style={[
+							global.completeLessonButtonW,
+							{flex: 1},
+							{
+								backgroundColor: colors.bodyFrontBg
+							}
+						]}
+					>
+						<View style={global.row}>
+							<View style={global.linkWithArrow}>
+								<Icon
+									webIcon={""}
+									icon={require("./assets/completed-course.png")}
+									styles={{width: 36, height: 36}}
+								/>
+
+								<Text
+									style={[
+										global.completeButton,
+										{
+											marginLeft: 10,
+											color: isColorDark(colors.bodyFrontBg) ? "white" : "black"
+										}
+									]}
+								>
+									{"Completed"}
+								</Text>
+							</View>
+						</View>
+					</View>
+				</View>
+			) : (
+				LessonActionBtn
+			);
+		}
 	);
 };

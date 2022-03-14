@@ -92,6 +92,7 @@ class SignupScreen extends React.Component {
 			modalHeader: null,
 			avatar: null,
 			avatarData: null,
+			avatarError: false,
 			loading: false
 		};
 	}
@@ -147,43 +148,46 @@ class SignupScreen extends React.Component {
 		) {
 			return false;
 		}
-
+		if (!this.state.avatar) {
+			this.setState({avatarError: true});
+			Alert.alert("", "Profile Photo is required");
+			return false;
+		}
 		if (this.props.withUserAgreementCheckbox) {
 			data.append(LEGAL_AGREEMENT_KEY, this.state.agreementChecked);
 		}
 
 		// screenProps.authModal.hideModal()
-		if (this.props.shouldPurchaseBeforeRegister) {
-			this.props.signupVerificationRequested(data, signupEmail);
-			return true;
-		}
 
-		if (this.state.avatar) {
-			this.setState({loading: true});
-			let {config, t} = this.props;
-			let api = getApi(config);
-			const avatarData = new FormData();
-			avatarData.append("avatar", {
-				uri: this.state.avatarData.path,
-				type: this.state.avatarData.mime,
-				name: this.state.avatarData.filename
-			});
-			api
-				.requestPostMultipart(
-					`wp-json/buddyboss/religion/v1/profile-photo-upload`,
-					avatarData,
-					null,
-					null
-				)
-				.then(r => {
-					data.append("avatar", r.data?.avatar_path);
-					data.append("avatar_url", r.data?.avatar_url);
+		this.setState({loading: true, avatarError: false});
+		let {config, t} = this.props;
+		let api = getApi(config);
+		const avatarData = new FormData();
+		avatarData.append("avatar", {
+			uri: this.state.avatarData.path,
+			type: this.state.avatarData.mime,
+			name: this.state.avatarData.filename
+		});
+		api
+			.requestPostMultipart(
+				`wp-json/buddyboss/religion/v1/profile-photo-upload`,
+				avatarData,
+				null,
+				null
+			)
+			.then(r => {
+				data.append("avatar", r.data?.avatar_path);
+				data.append("avatar_url", r.data?.avatar_url);
+				if (this.props.shouldPurchaseBeforeRegister) {
+					this.props.signupVerificationRequested(data, signupEmail);
+				} else {
 					this.props.signupRequested(data);
-					this.setState({loading: false});
-				});
-		} else {
-			this.props.signupRequested(data);
-		}
+				}
+				this.setState({loading: false});
+			});
+		// else {
+		// 	this.props.signupRequested(data);
+		// }
 	};
 
 	_keyboardDidShow = () => {
@@ -311,7 +315,11 @@ class SignupScreen extends React.Component {
 			image.mime === "image/png" ||
 			image.mime === "image/gif"
 		) {
-			this.setState({avatar: image.path, avatarData: image});
+			this.setState({
+				avatar: image.path,
+				avatarData: image,
+				avatarError: false
+			});
 		} else {
 			alert("You have selected an invalid image file type");
 		}
@@ -462,6 +470,13 @@ class SignupScreen extends React.Component {
 											colors={colors}
 										/>
 									</View>
+									{this.state.avatarError && (
+										<View>
+											<Text style={styles.error}>
+												{"Profile Photo is required"}
+											</Text>
+										</View>
+									)}
 									<SignupForm
 										{...{
 											t,
@@ -723,5 +738,9 @@ const styles = StyleSheet.create({
 		flex: 1,
 		padding: 20,
 		borderRadius: 12
+	},
+	error: {
+		color: "#f0000c",
+		marginBottom: 20
 	}
 });
