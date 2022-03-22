@@ -41,7 +41,8 @@ import {authDeeplinkNavigate} from "@src/utils/navigationActions";
 import {getExternalCodeSetup} from "@src/externalCode/externalRepo";
 import {
 	isCodeVerificationEnabled,
-	shouldPurchaseBeforeRegister
+	whenToBuyOnRegister,
+	REGISTER_FLOW
 } from "@src/reducers/settings";
 import FastImage from "react-native-fast-image";
 import SignupForm from "@src/components/Signup/SignupForm";
@@ -62,6 +63,10 @@ import {withSafeAreaInsets} from "react-native-safe-area-context";
 import AppImage from "@src/components/AppImage";
 import ProfileAvatarUpload from "../components/ProfileAvatarUpload";
 import {getApi} from "@src/services/index";
+import {
+	removeReadyPurchase,
+	purchaseAndRegister
+} from "@src/actions/inAppPurchases";
 
 type State = {
 	footerVisible: boolean,
@@ -90,12 +95,15 @@ class SignupScreen extends React.Component {
 			modalState: ModalBgState.closed,
 			modalContent: null,
 			modalHeader: null,
+			productsCount: null,
 			avatar: null,
 			avatarData: null,
 			avatarError: false,
 			loading: false
 		};
 	}
+
+	setProductsCount = productsCount => this.setState({productsCount});
 
 	componentDidMount() {
 		this._keyboardDidShowListener = Keyboard.addListener(
@@ -128,11 +136,20 @@ class SignupScreen extends React.Component {
 		clearTimeout(this._timeoutId);
 
 		Linking.removeEventListener("url", this.handleOpenURL);
+		if (this.props.whenToBuyOnRegister === REGISTER_FLOW.DURING) {
+			this.props.removeReadyPurchase();
+		}
 	}
 
 	handleOpenURL = event => {
 		authDeeplinkNavigate(event.url, this.props.navigation);
 	};
+
+	getShouldValidate = () =>
+		(this.props.whenToBuyOnRegister &&
+			this.props.whenToBuyOnRegister !== REGISTER_FLOW.DURING) ||
+		(this.props.whenToBuyOnRegister === REGISTER_FLOW.DURING &&
+			this.state.productsCount > 1);
 
 	_signup = ({
 		data,
@@ -141,6 +158,12 @@ class SignupScreen extends React.Component {
 		data: RegisterParams,
 		signupEmail: string
 	}) => {
+		if (getExternalCodeSetup().appInitialisationApi.sandboxEnabled) {
+			return Alert.alert(
+				this.props.t("common:sandbox_sign_up_alert_title"),
+				this.props.t("common:sandbox_sign_up_alert_message")
+			);
+		}
 		if (
 			this.props.signup.isFetching ||
 			this.state.disableButton ||
@@ -178,8 +201,19 @@ class SignupScreen extends React.Component {
 			.then(r => {
 				data.append("avatar", r.data?.avatar_path);
 				data.append("avatar_url", r.data?.avatar_url);
-				if (this.props.shouldPurchaseBeforeRegister) {
-					this.props.signupVerificationRequested(data, signupEmail);
+				if (this.getShouldValidate()) {
+					this.props.signupVerificationRequested(
+						data,
+						signupEmail,
+						this.props.whenToBuyOnRegister
+					);
+					return true;
+				} else if (
+					this.props.whenToBuyOnRegister === REGISTER_FLOW.DURING &&
+					this.state.productsCount === 1
+				) {
+					this.props.purchaseAndRegister(data, signupEmail);
+					return true;
 				} else {
 					this.props.signupRequested(data);
 				}
@@ -219,8 +253,13 @@ class SignupScreen extends React.Component {
 					t("signup:failModalTitle"),
 					t(
 						"signup:" +
-							(nextProps.signup.errorCode ||
-								nextProps.signup.user?.data?.message)
+							(typeof nextProps.signup.errorCode === "string"
+								? nextProps.signup.errorCode
+								: typeof nextProps.signup.errorCode === "object"
+									? nextProps.signup.errorCode?.[
+											Object.keys(nextProps.signup.errorCode)[0]
+									  ]
+									: nextProps.signup.user?.data?.message)
 					),
 					[
 						{
@@ -338,7 +377,8 @@ class SignupScreen extends React.Component {
 			privacyPolicy,
 			termsOfService,
 			withUserAgreementCheckbox,
-			shouldPurchaseBeforeRegister
+			whenToBuyOnRegister,
+			readyForPurchasing
 		} = this.props;
 
 		const {global, colors, calcFontSize} = globalStyle(config.styles);
@@ -350,9 +390,17 @@ class SignupScreen extends React.Component {
 		const authDarkStyle =
 			(externalCoreAuthStyle || config.styles?.auth?.style) !== "light-content";
 
-		const authBg = customColors.authBg || colors.authBg;
+		const authBg = customColors.regBg || colors.regBg;
+		const authTextColor = colors.regTextColor;
 
-		const title = t("signup:pageTitle");
+		let title = t("signup:pageTitle");
+
+		if (
+			whenToBuyOnRegister === REGISTER_FLOW.AFTER ||
+			whenToBuyOnRegister === REGISTER_FLOW.BEFORE
+		) {
+			title = t("signup:accountDetails");
+		}
 
 		let bgsource = sourceFromConfigImage(config.login_background_img);
 
@@ -418,7 +466,11 @@ class SignupScreen extends React.Component {
 						<KeyboardAvoidingView
 							enabled
 							behavior={"padding"}
-							style={{height: DEVICE_HEIGHT, paddingTop: NAV_HEIGHT}}
+							style={{
+								height: DEVICE_HEIGHT,
+								paddingTop:
+									whenToBuyOnRegister === REGISTER_FLOW.BEFORE ? 0 : NAV_HEIGHT
+							}}
 							showsVerticalScrollIndicator={false}
 						>
 							<FormWrapper
@@ -457,7 +509,9 @@ class SignupScreen extends React.Component {
 										styles.container,
 										{
 											paddingBottom:
-												correctBottomSafeArea(this.props.insets.bottom) + 40
+												correctBottomSafeArea(this.props.insets.bottom) + 40,
+											paddingTop:
+												whenToBuyOnRegister === REGISTER_FLOW.BEFORE ? 15 : 0
 										}
 									]}
 								>
@@ -478,11 +532,17 @@ class SignupScreen extends React.Component {
 										</View>
 									)}
 									<SignupForm
+										setProductsCount={this.setProductsCount}
+										productsCount={this.state.productsCount}
 										{...{
 											t,
 											config,
-											buttonLabel: shouldPurchaseBeforeRegister
-												? t("signup:verify")
+											whenToBuyOnRegister,
+											readyForPurchasing,
+											showProducts:
+												whenToBuyOnRegister === REGISTER_FLOW.DURING,
+											buttonLabel: this.getShouldValidate()
+												? t("signup:continue")
 												: t("signup:createAccount"),
 											authDarkStyle,
 											signupFieldsLoading,
@@ -531,36 +591,35 @@ class SignupScreen extends React.Component {
 								</View>
 							</FormWrapper>
 						</KeyboardAvoidingView>
-						<Animated.View
-							style={[
-								{
-									marginHorizontal: 20,
-									paddingTop: Platform.select({
-										android: this.state.animatedHeaderPaddingTopAndroid,
-										ios: NAV_HEIGHT
-									}),
-									transform: [
-										{
-											translateY: add(
-												this.headerTranslateY,
-												screenProps.authModal ? 10 : 0
-											)
-										}
-									],
-									position: "absolute",
-									width: DEVICE_WIDTH
-								}
-							]}
-						>
-							<AnimatedListHeader
-								title={title}
-								global={global}
-								scrollY={this.adjustedScroll}
-								style={{flex: 1}}
-								titleStyle={{color: colors.authTextColor}}
-								authWrapperProps={{actionOnGuestLogin: "hide"}}
-							/>
-						</Animated.View>
+						{whenToBuyOnRegister !== REGISTER_FLOW.BEFORE && (
+							<Animated.View
+								style={[
+									{
+										marginHorizontal: 20,
+										paddingTop: NAV_HEIGHT,
+										transform: [
+											{
+												translateY: add(
+													this.headerTranslateY,
+													screenProps.authModal ? 10 : 0
+												)
+											}
+										],
+										position: "absolute",
+										width: DEVICE_WIDTH
+									}
+								]}
+							>
+								<AnimatedListHeader
+									title={title}
+									global={global}
+									scrollY={this.adjustedScroll}
+									style={{flex: 1}}
+									titleStyle={{color: authTextColor}}
+									authWrapperProps={{actionOnGuestLogin: "hide"}}
+								/>
+							</Animated.View>
+						)}
 						<ScrollHeader
 							screenProps={{
 								global,
@@ -580,8 +639,11 @@ class SignupScreen extends React.Component {
 							screenTitle={title}
 							scrollY={this.adjustedScroll}
 							disableBlur={true}
+							disableContentAnimation={
+								whenToBuyOnRegister === REGISTER_FLOW.BEFORE
+							}
 							headerBgColor={"transparent"}
-							headerTitleStyle={{color: colors.authTextColor}}
+							headerTitleStyle={{color: authTextColor}}
 							headerProps={{
 								getHeaderLeft: () => (
 									<IconButton
@@ -591,7 +653,7 @@ class SignupScreen extends React.Component {
 											const backAction = NavigationActions.back();
 											navigation.dispatch(backAction);
 										}}
-										tintColor={colors.authTextColor}
+										tintColor={authTextColor}
 										style={{
 											width: 24,
 											height: 18
@@ -637,6 +699,7 @@ class SignupScreen extends React.Component {
 		return (
 			<UserAgreementText
 				{...{
+					register: true,
 					colors,
 					global,
 					t,
@@ -661,7 +724,8 @@ SignupScreen.propTypes = {
 };
 
 const mapStateToProps = state => ({
-	shouldPurchaseBeforeRegister: shouldPurchaseBeforeRegister(state),
+	whenToBuyOnRegister: whenToBuyOnRegister(state),
+	readyForPurchasing: state.inAppPurchases.purchasing.readyForPurchasing,
 	settings: state.settings.settings,
 	withUserAgreementCheckbox: getPlatformSettings(state)[
 		Settings.REGISTER_LEGAL_AGREEMENT
@@ -686,8 +750,10 @@ SignupScreen = withSafeAreaInsets(SignupScreen);
 let ConnectScreen = connect(
 	mapStateToProps,
 	{
+		removeReadyPurchase,
 		signupRequested,
-		signupVerificationRequested
+		signupVerificationRequested,
+		purchaseAndRegister
 	}
 )(SignupScreen);
 
