@@ -173,7 +173,7 @@ class SignupScreen extends React.Component {
 		}
 		if (!this.state.avatar) {
 			this.setState({avatarError: true});
-			Alert.alert("", "Profile Photo is required");
+			Alert.alert("", "Profile photo required");
 			return false;
 		}
 		if (this.props.withUserAgreementCheckbox) {
@@ -525,9 +525,9 @@ class SignupScreen extends React.Component {
 										/>
 									</View>
 									{this.state.avatarError && (
-										<View>
+										<View style={styles.errorContainer}>
 											<Text style={styles.error}>
-												{"Profile Photo is required"}
+												{"Profile photo required"}
 											</Text>
 										</View>
 									)}
@@ -805,8 +805,12 @@ const styles = StyleSheet.create({
 		padding: 20,
 		borderRadius: 12
 	},
+	errorContainer: {
+		justifyContent: "center",
+		alignItems: "center"
+	},
 	error: {
-		color: "#f0000c",
-		marginBottom: 20
+		color: "#fff",
+		marginBottom: 14
 	}
 });
