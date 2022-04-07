@@ -524,13 +524,14 @@ class SignupScreen extends React.Component {
 											colors={colors}
 										/>
 									</View>
-									{this.state.avatarError && (
-										<View style={styles.errorContainer}>
-											<Text style={styles.error}>
-												{"Profile photo required"}
-											</Text>
-										</View>
-									)}
+									{this.state.avatarError ||
+										(!this.state.avatar && (
+											<View style={styles.errorContainer}>
+												<Text style={styles.error}>
+													{"Profile photo required"}
+												</Text>
+											</View>
+										))}
 									<SignupForm
 										setProductsCount={this.setProductsCount}
 										productsCount={this.state.productsCount}
@@ -811,6 +812,8 @@ const styles = StyleSheet.create({
 	},
 	error: {
 		color: "#fff",
-		marginBottom: 14
+		marginBottom: 14,
+		fontFamily: "Lato",
+		fontWeight: "400"
 	}
 });
