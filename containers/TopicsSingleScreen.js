@@ -85,6 +85,7 @@ import {mediaUpdateRequest} from "@src/actions/photos";
 
 const THRESHOLD = 0.7;
 const ActionSheet = require("@yfuks/react-native-action-sheet").default;
+
 `/********`;
 const DELETE_ICON_COLOR = "#8C0087";
 
@@ -101,6 +102,17 @@ const moreOptionsIcons = {
 	move: require("@src/assets/img/move.png")
 };
 `********/`;
+
+const ItemHeaderComponent = props => {
+	const CustomComponent = getExternalCodeSetup().topicsApi.TopicItemHeader;
+
+	if (getExternalCodeSetup().topicsApi.TopicItemHeader) {
+		return <CustomComponent {...props} />;
+	}
+
+	return <ItemHeader {...props} />;
+};
+
 class TopicsSingleScreen extends Component {
 	listRef: *;
 	imagesViewPagerRef: *;
@@ -123,7 +135,7 @@ class TopicsSingleScreen extends Component {
 			currentReply: null,
 			showImagesModal: false,
 			initialImageToShow: 0,
-			topic: props.navigation.state.params.topic
+			topic: props.navigation.state.params?.topic || props?.topic
 		};
 
 		this.titleVisible = false;
@@ -131,6 +143,7 @@ class TopicsSingleScreen extends Component {
 		this.contentSizeInterval = undefined;
 		this.moreOptionsModalRef = React.createRef(null);
 		this.replyMoreOptionsModalRef = React.createRef(null);
+		this.closedDiscussionModalRef = React.createRef(null);
 		this.imagesViewPagerRef = React.createRef();
 	}
 
@@ -228,21 +241,25 @@ class TopicsSingleScreen extends Component {
 	componentDidMount() {
 		let params = this.props.navigation.state.params;
 
-		if (!("topic" in params)) {
-			return this.props.navigation.dispatch(NavigationActions.back());
-		} else {
+		if (typeof params !== "object") {
+			params = {};
+		}
+
+		if ("topic" in params || this.props.topic) {
 			setTimeout(() => {
 				this.props.navigation.onStartCallback(this._onStart);
 				this.props.navigation.onStopCallback(this._onStop);
 			}, 0);
+
+			this.loadInitialReplies();
+			this.initTopicOptions();
+
+			this.props.navigation.setParams({
+				onOpenAction: this._onOpenTopicActions
+			});
+		} else {
+			return this.props.navigation.dispatch(NavigationActions.back());
 		}
-
-		this.loadInitialReplies();
-		this.initTopicOptions();
-
-		this.props.navigation.setParams({
-			onOpenAction: this._onOpenTopicActions
-		});
 	}
 
 	loadInitialReplies = () => {
@@ -417,8 +434,10 @@ class TopicsSingleScreen extends Component {
 							this._onOpenReplyActions(reply);
 					  }
 					: null,
+			openClosedModel: this.openClosedDiscussionModal,
 			gif: get(t => t.bbp_media_gif),
 			documents: get(t => t.bbp_documents),
+			canReply: get(t => t.canReply, false),
 			can_report: get(t => t.can_report, false),
 			reported: get(t => t.reported, false),
 			media,
@@ -447,7 +466,7 @@ class TopicsSingleScreen extends Component {
 
 	isReplyPending = reply => this.isReplyIdPending(reply.id);
 
-	_renderListItem = (reply, config, handleLinkClicks, index) => {
+	_renderListItem = (reply, config, attemptDeepLink, index) => {
 		const {t, auth} = this.props;
 		const {global, colors, htmlStyles, htmlStylesCss, tagsStyles} = globalStyle(
 			config.styles
@@ -464,6 +483,7 @@ class TopicsSingleScreen extends Component {
 				token={auth.token}
 				firstItem={index === 0}
 				reply={viewModel}
+				topicClosed={reply.topicClosedForUser}
 				textColor={textColor}
 				formatDateFunc={formatDateFunc}
 				global={global}
@@ -479,7 +499,7 @@ class TopicsSingleScreen extends Component {
 				navigation={this.props.navigation}
 				platform={Platform.OS}
 				tagsStyles={tagsStyles}
-				handleLinkClicks={handleLinkClicks}
+				attemptDeepLink={attemptDeepLink}
 				headerTitleStyle={styles.topicAuthor}
 			/>
 		);
@@ -562,6 +582,12 @@ class TopicsSingleScreen extends Component {
 		this.replyMoreOptionsModalRef.current?.close();
 	};
 
+	openClosedDiscussionModal = () =>
+		this.closedDiscussionModalRef.current?.open();
+
+	closeClosedDiscussionModal = () =>
+		this.closedDiscussionModalRef.current?.close();
+
 	renderTags = (global, tags = "") => (
 		<View style={styles.tagsContainer}>
 			{tags.split(", ")?.map((tag, index) => (
@@ -575,28 +601,38 @@ class TopicsSingleScreen extends Component {
 		</View>
 	);
 
-	renderReplyIcon = ({t, colors, global, onPress}) => (
-		<AppTouchableOpacity
-			style={[global.itemFooter]}
-			onPress={onPress}
-			hitSlop={{top: 10, right: 20, bottom: 20, left: 20}}
-		>
-			<Icon
-				icon={require("@src/assets/img/reply.png")}
-				webIcon={"IconReply"}
-				tintColor={colors.descLightTextColor}
-				style={{
-					width: 14,
-					height: 12
-				}}
-			/>
-			<Text style={[global.itemMeta, {marginLeft: 6, color: colors.textColor}]}>
-				{t("topic:reply")}
-			</Text>
-		</AppTouchableOpacity>
-	);
+	renderReplyIcon = ({t, colors, global, topic}) => {
+		const topicCloseForUser = isUserAdmin(this.props.currentUser)
+			? false
+			: topic.is_closed;
+		return (
+			<AppTouchableOpacity
+				activeOpacity={topicCloseForUser ? 0.5 : 1}
+				style={[global.itemFooter, {opacity: topicCloseForUser ? 0.5 : 1}]}
+				onPress={
+					topicCloseForUser ? this.openClosedDiscussionModal : topic.newReply
+				}
+				hitSlop={{top: 10, right: 20, bottom: 20, left: 20}}
+			>
+				<Icon
+					icon={require("@src/assets/img/reply.png")}
+					webIcon={"IconReply"}
+					tintColor={colors.descLightTextColor}
+					style={{
+						width: 14,
+						height: 12
+					}}
+				/>
+				<Text
+					style={[global.itemMeta, {marginLeft: 6, color: colors.textColor}]}
+				>
+					{t("topic:reply")}
+				</Text>
+			</AppTouchableOpacity>
+		);
+	};
 
-	renderHeader = handleLinkClicks => {
+	renderHeader = attemptDeepLink => {
 		const {t, config, settings, currentTopic, navigation} = this.props;
 		const {global, colors, tagsStyles} = globalStyle(config.styles);
 		const textColor = colors.textColor;
@@ -615,149 +651,164 @@ class TopicsSingleScreen extends Component {
 		const content = filterContentCss(topic.content);
 
 		return (
-			<View
-				key={hashFunction(topic.content + topic.title)}
-				style={[
-					styles.headerContainer,
-					{backgroundColor: colors.bodyFrontBg, borderColor: colors.borderColor}
-				]}
-			>
+			<>
+				{currentTopic.is_closed && (
+					<ClosedLabel
+						t={t}
+						global={global}
+						colors={colors}
+						containerStyle={{marginLeft: GUTTER, alignSelf: "flex-start"}}
+					/>
+				)}
 				<View
+					key={hashFunction(topic.content + topic.title)}
 					style={[
-						styles.topicHeader,
-						topic.actionStates.spam
-							? global.itemSpam
-							: {backgroundColor: colors.bodyFrontBg},
+						styles.headerContainer,
 						{
-							borderBottomColor: borderColor
+							backgroundColor: colors.bodyFrontBg,
+							borderColor: colors.borderColor
 						}
 					]}
 				>
-					<Text style={[global.topicSingleTitle, {marginBottom: 20}]}>
-						{topic.title}
-					</Text>
+					<View
+						style={[
+							styles.topicHeader,
+							topic.actionStates.spam
+								? global.itemSpam
+								: {backgroundColor: colors.bodyFrontBg},
+							{
+								borderBottomColor: borderColor
+							}
+						]}
+					>
+						<Text style={[global.topicSingleTitle, {marginBottom: 20}]}>
+							{topic.title}
+						</Text>
 
-					<View style={styles.itemAltDesc}>
-						<ReadMore
-							content={content}
-							size={400}
-							t={t}
-							global={global}
-							style={{marginBottom: 20}}
-						>
-							{content => (
-								<HTML
-									html={content}
-									tagsStyles={{
-										...tagsStyles,
-										iframe: {
-											marginTop: 10,
-											marginBottom: 10
-										}
-									}}
-									baseFontStyle={global.textHtml}
-									onLinkPress={handleLinkClicks}
-									staticContentMaxWidth={computedWidth}
-									alterChildren={alterChildrenHTML(computedWidth)}
-									renderers={{
-										a: aTagRenderer(computedWidth)
-									}}
-								/>
-							)}
-						</ReadMore>
-					</View>
-
-					{topic.media?.length > 0 && (
-						<View style={{marginBottom: 20}}>
-							<ImageCollection
-								item={topic}
-								containerStyle={{marginTop: 10}}
+						<View style={styles.itemAltDesc}>
+							<ReadMore
 								colors={colors}
-								showActionButtons={false}
-								global={global}
+								content={content}
+								size={400}
 								t={t}
-							/>
-						</View>
-					)}
-
-					{topic.videos?.length > 0 && (
-						<View style={{marginBottom: 20}}>
-							<ImageCollection
-								item={topic}
-								containerStyle={{marginTop: 10}}
-								colors={colors}
-								showActionButtons={false}
 								global={global}
-								t={t}
-							/>
+								style={{marginBottom: 20}}
+							>
+								{content => (
+									<HTML
+										html={content}
+										tagsStyles={{
+											...tagsStyles,
+											iframe: {
+												marginTop: 10,
+												marginBottom: 10
+											}
+										}}
+										baseFontStyle={global.textHtml}
+										onLinkPress={attemptDeepLink}
+										staticContentMaxWidth={computedWidth}
+										alterChildren={alterChildrenHTML(computedWidth)}
+										renderers={{
+											a: aTagRenderer(computedWidth)
+										}}
+									/>
+								)}
+							</ReadMore>
 						</View>
-					)}
 
-					{topic.gif?.preview_url ? (
-						<View style={{marginBottom: 20}}>
-							<GifVideoPlayer
-								url={topic.gif?.video_url}
-								poster={topic.gif?.preview_url}
-								width={DEVICE_WIDTH * 0.6}
-							/>
-						</View>
-					) : null}
-
-					{topic?.documents?.length > 0 &&
-						topic.documents.map(item => {
-							const viewModel: DocumentViewModel = documentToViewModel(item);
-
-							return (
-								<EmbeddedDocumentItem
-									{...{
-										t,
-										colors,
-										global,
-										token,
-										viewModel,
-										navigation
-									}}
+						{topic.media?.length > 0 && (
+							<View style={{marginBottom: 20}}>
+								<ImageCollection
+									item={topic}
+									containerStyle={{marginTop: 10}}
+									colors={colors}
+									showActionButtons={false}
+									global={global}
+									t={t}
 								/>
-							);
-						})}
+							</View>
+						)}
 
-					{topic.topicTags?.length > 0
-						? this.renderTags(global, topic.topicTags)
-						: null}
+						{topic.videos?.length > 0 && (
+							<View style={{marginBottom: 20}}>
+								<ImageCollection
+									item={topic}
+									containerStyle={{marginTop: 10}}
+									colors={colors}
+									showActionButtons={false}
+									global={global}
+									t={t}
+								/>
+							</View>
+						)}
 
-					<View style={{flex: 1, marginBottom: 20}}>
-						<ItemHeader
-							item={topic}
-							textColor={textColor}
-							linkColor={linkColor}
-							global={global}
-							formatDateFunc={formatDateFunc}
-							light={false}
-							alignItems={"flex-start"}
-							actionButtons={actionButtons}
-							avatarSize={38}
-							titleStyle={styles.topicAuthor}
-						/>
-					</View>
+						{topic.gif?.preview_url ? (
+							<View style={{marginBottom: 20}}>
+								<GifVideoPlayer
+									url={topic.gif?.video_url}
+									poster={topic.gif?.preview_url}
+									width={DEVICE_WIDTH * 0.6}
+								/>
+							</View>
+						) : null}
 
-					<View style={[global.itemFooter]}>
-						<AuthWrapper>
-							{topic.canReply &&
-								this.renderReplyIcon({
+						{topic?.documents?.length > 0 &&
+							topic.documents.map(item => {
+								const viewModel: DocumentViewModel = documentToViewModel(item);
+
+								return (
+									<EmbeddedDocumentItem
+										{...{
+											t,
+											colors,
+											global,
+											token,
+											viewModel,
+											navigation
+										}}
+									/>
+								);
+							})}
+
+						{topic.topicTags?.length > 0
+							? this.renderTags(global, topic.topicTags)
+							: null}
+
+						<View style={{flex: 1, marginBottom: 20}}>
+							<ItemHeaderComponent
+								{...{
+									item: topic,
+									textColor,
+									linkColor,
+									global,
+									formatDateFunc,
+									light: false,
+									alignItems: "flex-start",
+									avatarSize: 38,
+									actionButtons,
+									titleStyle: styles.topicAuthor
+								}}
+							/>
+						</View>
+
+						<View style={[global.itemFooter]}>
+							<AuthWrapper>
+								{this.renderReplyIcon({
 									t,
 									colors,
 									global,
-									onPress: topic.newReply
+									topic
 								})}
-						</AuthWrapper>
-						<View style={[global.itemFooterMeta, {marginLeft: "auto"}]}>
-							<Text style={global.itemMeta}>
-								{topic.voiceCount} • {topic.replyCount}
-							</Text>
+							</AuthWrapper>
+							<View style={[global.itemFooterMeta, {marginLeft: "auto"}]}>
+								<Text style={global.itemMeta}>
+									{topic.voiceCount} • {topic.replyCount}
+								</Text>
+							</View>
 						</View>
 					</View>
 				</View>
-			</View>
+			</>
 		);
 	};
 
@@ -793,7 +844,7 @@ class TopicsSingleScreen extends Component {
 		{nativeEvent: {contentOffset: {y: this._scrollY}}}
 	]);
 
-	renderWithoutReplies = handleLinkClicks => {
+	renderWithoutReplies = attemptDeepLink => {
 		const {t, config, online} = this.props;
 
 		const {global, htmlStyles, htmlStylesCss, colors} = globalStyle(
@@ -802,7 +853,7 @@ class TopicsSingleScreen extends Component {
 
 		return (
 			<ScrollView style={global.container}>
-				{this.renderHeader(handleLinkClicks)}
+				{this.renderHeader(attemptDeepLink)}
 				<EmptyList
 					global={global}
 					emptyText={{
@@ -828,8 +879,19 @@ class TopicsSingleScreen extends Component {
 		this.listRef = component;
 	};
 
-	renderItem = (config, handleLinkClicks) => ({item, index}) =>
-		this._renderListItem(item, config, handleLinkClicks, index);
+	renderItem = (config, attemptDeepLink, topic) => ({item, index}) =>
+		this._renderListItem(
+			{
+				...item,
+				canReply: topic.canReply,
+				topicClosedForUser: isUserAdmin(this.props.currentUser)
+					? false
+					: topic.is_closed
+			},
+			config,
+			attemptDeepLink,
+			index
+		);
 
 	onRefresh = () =>
 		this.props.replyCallbacks.handleRefresh(this.props.currentTopic);
@@ -946,7 +1008,7 @@ class TopicsSingleScreen extends Component {
 					initialNumToRender={replyPageSize}
 					enableEmptySections={true}
 					onScroll={this._scrollingAnimation}
-					renderItem={this.renderItem(config, attemptDeepLink)}
+					renderItem={this.renderItem(config, attemptDeepLink, topic)}
 					data={this.props.replyListProps.replies || []}
 					refreshing={this.props.replyListProps.isRefreshing}
 					onRefresh={this.onRefresh}
@@ -1030,6 +1092,32 @@ class TopicsSingleScreen extends Component {
 						textMap: this.state.replyActionsObject,
 						paddingBottom: correctBottomSafeArea(this.props.insets.bottom)
 					})}
+				</PortalScrollableModal>
+
+				<PortalScrollableModal
+					ref={this.closedDiscussionModalRef}
+					HeaderComponent={() =>
+						this.renderBottomSheetHeader({
+							global,
+							title: this.props.t("forums:discussionClosedTitle"),
+							onClose: this.closeClosedDiscussionModal,
+							colors
+						})
+					}
+				>
+					<View
+						style={{
+							...global.panel,
+							paddingHorizontal: GUTTER,
+							paddingBottom: correctBottomSafeArea(this.props.insets.bottom)
+						}}
+					>
+						<View style={global.roundBox}>
+							<Text style={[{padding: GUTTER}, global.filterText]}>
+								{this.props.t("forums:discussionClosedDescription")}
+							</Text>
+						</View>
+					</View>
 				</PortalScrollableModal>
 			</View>
 		);
@@ -1198,7 +1286,7 @@ const mapStateToProps = (state, ownProps) => {
 		loadMoreTopAllowed: isLoadingAllowed(state.singleTopic, "top")
 	};
 
-	const topic = ownProps.navigation.state.params.topic;
+	const topic = ownProps.topic || ownProps.navigation.state.params.topic;
 
 	return {
 		currentUser: state.user.userObject,
@@ -1235,6 +1323,9 @@ import AnimatedCoverHeader from "@src/components/AnimatedCoverHeader";
 import {getReferer} from "@src/utils/buildConfigUtils";
 import {withSafeAreaInsets} from "react-native-safe-area-context";
 import withDeeplinkClickHandler from "@src/components/hocs/withDeeplinkClickHandler";
+import reactotron from "reactotron-react-native";
+import {ClosedLabel} from "@src/components/utils";
+import {isUserAdmin} from "@src/utils/userPermissions";
 
 function mapDispatchToProps(dispatch, ownProps) {
 	let singleTopicActions = bindActionCreators(SingleTopicActions, dispatch);
