@@ -34,7 +34,7 @@ import {sourceFromConfigImage} from "@src/utils/CCDataUtil";
 
 import IconButton from "@src/components/IconButton";
 import Alert from "@src/components/AppAlert";
-import {translate} from "react-i18next";
+import {withTranslation} from "react-i18next";
 import {NavigationActions} from "react-navigation";
 import {isPlatformDisabled} from "@src/utils";
 import {authDeeplinkNavigate} from "@src/utils/navigationActions";
@@ -73,7 +73,6 @@ type State = {
 	disableButton: boolean
 };
 
-@translate(["signup"], {wait: true})
 class SignupScreen extends React.Component {
 	state: State;
 	_timeoutId: number;
@@ -746,7 +745,7 @@ const mapStateToProps = state => ({
 
 const {addBackHandling} = require("@src/containers/ContainerHelpers");
 
-SignupScreen = withSafeAreaInsets(SignupScreen);
+SignupScreen = withTranslation('signup')(withSafeAreaInsets(SignupScreen));
 
 let ConnectScreen = connect(
 	mapStateToProps,

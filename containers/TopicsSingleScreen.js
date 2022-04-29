@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import {connect} from "react-redux";
 import PropTypes from "prop-types";
-import {translate} from "react-i18next";
+import {withTranslation} from "react-i18next";
 import AppList from "@src/components/AppList";
 import ReadMore from "@src/components/ReadMore";
 import AppTouchableOpacity from "@src/components/AppTouchableOpacity";
@@ -1592,7 +1592,7 @@ const merge = (stateProps, dispatchProps, ownProps) => {
 
 const TopicsSingleScreenEnh = compose(
 	withProfileNavigation,
-	translate(["topic"], {wait: true}),
+	withTranslation('topic'),
 	withReportModal,
 	connect(
 		mapStateToProps,
