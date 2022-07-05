@@ -6,6 +6,44 @@ import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
 import SignupScreen from "./containers/SignupScreen";
+import React from "react";
+import { NativeModules } from "react-native";
+const { RNCustomCode } = NativeModules;
+import {
+  initialize,
+  BlockliBlog,
+  BlockliFeatured,
+  BlockliGraphics,
+  BlockliPost,
+  BlockliVideo,
+} from "@blocklienterprise/blockli";
+import config from "@src/build_config.json";
+
+export const applyCustomCode = async (externalCodeSetup) => {
+  const { blocksApi } = externalCodeSetup;
+
+  await initialize("374SZPV2W7WL7BQ", config.app_id); // Q6DZ51BCJAT9VAK
+
+  blocksApi.addCustomBlockRender("blockli/blog-cards", (props) => (
+    <BlockliBlog {...props} />
+  ));
+
+  blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
+    <BlockliFeatured {...props} />
+  ));
+
+  blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
+    <BlockliGraphics {...props} />
+  ));
+
+  blocksApi.addCustomBlockRender("blockli/video-cards", (props) => (
+    <BlockliVideo {...props} />
+  ));
+
+  blocksApi.addCustomBlockRender("blockli/post-cards", (props) => (
+    <BlockliPost {...props} />
+  ));
+};
 
 export const applyCustomCode = externalCodeSetup => {
 	const {
