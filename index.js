@@ -6,7 +6,6 @@ import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
 import SignupScreen from "./containers/SignupScreen";
-import React from "react";
 import { NativeModules } from "react-native";
 const { RNCustomCode } = NativeModules;
 import {
@@ -22,7 +21,7 @@ import config from "@src/build_config.json";
 export const applyCustomCode = async (externalCodeSetup) => {
   const { blocksApi } = externalCodeSetup;
 
-  await initialize("374SZPV2W7WL7BQ", config.app_id); // Q6DZ51BCJAT9VAK
+  await initialize("Q6DZ51BCJAT9VAK", config.app_id);
 
   blocksApi.addCustomBlockRender("blockli/blog-cards", (props) => (
     <BlockliBlog {...props} />
