@@ -6,6 +6,7 @@ import ProgressCircleComponent from "./components/Progress";
 import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
 import SignupScreen from "./containers/SignupScreen";
+// BEGIN BLOCKLI
 import { NativeModules } from "react-native";
 const { RNCustomCode } = NativeModules;
 import {
@@ -17,34 +18,9 @@ import {
   BlockliVideo,
 } from "@blocklienterprise/blockli";
 import config from "@src/build_config.json";
+// END BLOCKLI
 
-export const applyCustomCode = async (externalCodeSetup) => {
-  const { blocksApi } = externalCodeSetup;
-
-  await initialize("Q6DZ51BCJAT9VAK", config.app_id);
-
-  blocksApi.addCustomBlockRender("blockli/blog-cards", (props) => (
-    <BlockliBlog {...props} />
-  ));
-
-  blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
-    <BlockliFeatured {...props} />
-  ));
-
-  blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
-    <BlockliGraphics {...props} />
-  ));
-
-  blocksApi.addCustomBlockRender("blockli/video-cards", (props) => (
-    <BlockliVideo {...props} />
-  ));
-
-  blocksApi.addCustomBlockRender("blockli/post-cards", (props) => (
-    <BlockliPost {...props} />
-  ));
-};
-
-export const applyCustomCode = externalCodeSetup => {
+export const applyCustomCode = async externalCodeSetup => {
 	const {
 		cssApi,
 		screenHooksApi,
@@ -64,6 +40,28 @@ export const applyCustomCode = externalCodeSetup => {
 	blocksApi.addCustomBlockRender("core/paragraph", props => (
 		<ParagraphBlock {...props} />
 	));
+
+	//BEGIN BLOCKLI
+
+	await initialize("Q6DZ51BCJAT9VAK", config.app_id);
+
+	blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
+		<BlockliFeatured {...props} />
+	  ));
+	
+	  blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
+		<BlockliGraphics {...props} />
+	  ));
+	
+	  blocksApi.addCustomBlockRender("blockli/video-cards", (props) => (
+		<BlockliVideo {...props} />
+	  ));
+	
+	  blocksApi.addCustomBlockRender("blockli/post-cards", (props) => (
+		<BlockliPost {...props} />
+	  ));
+	  
+	//END BLOCKLI
 
 	const customIconFilter = (key, defaultIcon) => {
 		switch (key) {
