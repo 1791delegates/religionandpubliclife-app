@@ -7,17 +7,17 @@ import ParagraphBlock from "./components/ParagraphBlock";
 import TopicsSingleScreen from "./containers/TopicsSingleScreen";
 import SignupScreen from "./containers/SignupScreen";
 // BEGIN BLOCKLI
-import { NativeModules } from "react-native";
-const { RNCustomCode } = NativeModules;
-import {
-  initialize,
-  BlockliBlog,
-  BlockliFeatured,
-  BlockliGraphics,
-  BlockliPost,
-  BlockliVideo,
-} from "@blocklienterprise/blockli";
-import config from "@src/build_config.json";
+//import { NativeModules } from "react-native";
+//const { RNCustomCode } = NativeModules;
+//import {
+  //initialize,
+  //BlockliBlog,
+  //BlockliFeatured,
+  //BlockliGraphics,
+  //BlockliPost,
+  //BlockliVideo,
+//} from "@blocklienterprise/blockli";
+//import config from "@src/build_config.json";
 // END BLOCKLI
 
 export const applyCustomCode = async externalCodeSetup => {
@@ -43,23 +43,23 @@ export const applyCustomCode = async externalCodeSetup => {
 
 	//BEGIN BLOCKLI
 
-	await initialize("Q6DZ51BCJAT9VAK", config.app_id);
+	//await initialize("Q6DZ51BCJAT9VAK", config.app_id);
 
-	blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
-		<BlockliFeatured {...props} />
-	  ));
+	//blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
+		//<BlockliFeatured {...props} />
+	  //));
 	
-	  blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
-		<BlockliGraphics {...props} />
-	  ));
+	  //blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
+		//<BlockliGraphics {...props} />
+	 // ));
 	
-	  blocksApi.addCustomBlockRender("blockli/video-cards", (props) => (
-		<BlockliVideo {...props} />
-	  ));
+	 // blocksApi.addCustomBlockRender("blockli/video-cards", (props) => (
+		//<BlockliVideo {...props} />
+	 // ));
 	
-	  blocksApi.addCustomBlockRender("blockli/post-cards", (props) => (
-		<BlockliPost {...props} />
-	  ));
+	  //blocksApi.addCustomBlockRender("blockli/post-cards", (props) => (
+		//<BlockliPost {...props} />
+	 // ));
 	  
 	//END BLOCKLI
 
