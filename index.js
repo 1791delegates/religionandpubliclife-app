@@ -34,12 +34,12 @@ export const applyCustomCode = async (externalCodeSetup) => {
   await initialize("Q6DZ51BCJAT9VAK", config.app_id);
 
   //blocksApi.addCustomBlockRender("blockli/blog-cards", (props) => (
-    <BlockliBlog {...props} />
+   // <BlockliBlog {...props} />
   //));
 
-  blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
-    <BlockliFeatured {...props} />
-  ));
+  //blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
+    //<BlockliFeatured {...props} />
+  //));
 
   blocksApi.addCustomBlockRender("blockli/graphic-cards", (props) => (
     <BlockliGraphics {...props} />
