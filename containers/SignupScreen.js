@@ -172,7 +172,7 @@ class SignupScreen extends React.Component {
 		}
 		if (!this.state.avatar) {
 			this.setState({avatarError: true});
-			Alert.alert("", "Profile photo required");
+			Alert.alert("", "Required: Profile Headshot");
 			return false;
 		}
 		if (this.props.withUserAgreementCheckbox) {
@@ -381,6 +381,7 @@ class SignupScreen extends React.Component {
 		} = this.props;
 
 		const {global, colors, calcFontSize} = globalStyle(config.styles);
+
 		const {
 			customColors,
 			auth: {style: externalCoreAuthStyle}
@@ -527,7 +528,7 @@ class SignupScreen extends React.Component {
 										(!this.state.avatar && (
 											<View style={styles.errorContainer}>
 												<Text style={styles.error}>
-													{"Profile photo required"}
+													{"Required: Profile Headshot"}
 												</Text>
 											</View>
 										))}
@@ -745,7 +746,7 @@ const mapStateToProps = state => ({
 
 const {addBackHandling} = require("@src/containers/ContainerHelpers");
 
-SignupScreen = withTranslation('signup')(withSafeAreaInsets(SignupScreen));
+SignupScreen = withTranslation("signup")(withSafeAreaInsets(SignupScreen));
 
 let ConnectScreen = connect(
 	mapStateToProps,
