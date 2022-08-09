@@ -11,7 +11,7 @@ const {RNCustomCode} = NativeModules;
 import {
 	initialize,
 	BlockliBlog,
-	//BlockliFeatured,
+	BlockliFeatured,
 	BlockliGraphics,
 	BlockliPost,
 	BlockliVideo
@@ -37,9 +37,9 @@ export const applyCustomCode = async externalCodeSetup => {
 	// <BlockliBlog {...props} />
 	//));
 
-	//blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
-	//<BlockliFeatured {...props} />
-	//));
+	blocksApi.addCustomBlockRender("blockli/featured-cards", (props) => (
+	<BlockliFeatured {...props} />
+	));
 
 	blocksApi.addCustomBlockRender("blockli/graphic-cards", props => (
 		<BlockliGraphics {...props} />
