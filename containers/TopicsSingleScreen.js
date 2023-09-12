@@ -98,8 +98,8 @@ const moreOptionsIcons = {
 	spam: require("../assets/Spam.png"),
 	report: require("../assets/Report.png"),
 	trash: require("../assets/Trash.png"),
-	split: require("@src/assets/img/split.png"),
-	move: require("@src/assets/img/move.png")
+	split: require("../assets/split.png"),
+	move: require("../assets/move.png")
 };
 `********/`;
 
@@ -615,7 +615,7 @@ class TopicsSingleScreen extends Component {
 				hitSlop={{top: 10, right: 20, bottom: 20, left: 20}}
 			>
 				<Icon
-					icon={require("@src/assets/img/reply.png")}
+					icon={require("../assets/reply.png")}
 					webIcon={"IconReply"}
 					tintColor={colors.descLightTextColor}
 					style={{
@@ -820,7 +820,7 @@ class TopicsSingleScreen extends Component {
 			this.state.topicActionsOrder.length > 1 && (
 				<AuthWrapper>
 					<IconButton
-						icon={require("@src/assets/img/horizontal-dots.png")}
+						icon={require("../assets/horizontal-dots.png")}
 						webIcon={"IconMoreVertical"}
 						pressHandler={this._onOpenTopicActions}
 						tintColor={headerColor}
@@ -859,7 +859,7 @@ class TopicsSingleScreen extends Component {
 					emptyText={{
 						title: t("empty:repliesNoPermissionsTitle"),
 						webIcon: "IconEmptyTopics",
-						icon: require("@src/assets/img/empty-replies.png"),
+						icon: require("../assets/empty-replies.png"),
 						color: colors.borderColor
 					}}
 					style={{marginBottom: 70}}
@@ -999,7 +999,7 @@ class TopicsSingleScreen extends Component {
 					emptyText={{
 						title: t("empty:repliesTitle"),
 						webIcon: "IconEmptyReplies",
-						icon: require("@src/assets/img/empty-replies.png"),
+						icon: require("../assets/empty-replies.png"),
 						color: colors.borderColor
 					}}
 					// key={config.hash}

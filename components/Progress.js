@@ -35,7 +35,7 @@ const Progress = (props: Props) => {
 				webIcon={"IconAndroidGroup"}
 				styles={{width: size + 2, height: size + 2}}
 				tintColor={"#045EA7"}
-				icon={require("@src/assets/img/check.png")}
+				icon={require("../assets/check.png")}
 				rtlStyleFix={"handled"}
 			/>
 		);

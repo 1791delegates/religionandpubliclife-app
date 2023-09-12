@@ -648,7 +648,7 @@ class SignupScreen extends React.Component {
 							headerProps={{
 								getHeaderLeft: () => (
 									<IconButton
-										icon={require("@src/assets/img/arrow-back.png")}
+										icon={require("../assets/arrow-back.png")}
 										webIcon={"IconArrowBack"}
 										pressHandler={() => {
 											const backAction = NavigationActions.back();
