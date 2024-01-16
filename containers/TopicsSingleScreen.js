@@ -50,7 +50,8 @@ import {
 	memberToViewModel,
 	INITIAL_HEADER_SCROLL,
 	stripHTMLTags,
-	documentToViewModel
+	documentToViewModel,
+	elementDomTempering
 } from "@src/utils";
 import {NavigationActions, withNavigation} from "react-navigation";
 import Animated, {sub} from "react-native-reanimated";
@@ -59,7 +60,6 @@ import Animated, {sub} from "react-native-reanimated";
 import * as SingleTopicActions from "@src/actions/singleTopic";
 import {bulkRecourcesByUrlRequest} from "@src/actions/bulkUrls";
 import * as TopicsAction from "@src/actions/topics";
-import HTML from "react-native-render-html";
 import IntercomButton from "@src/components/IntercomButton";
 import TrackPlayerControllerMini from "@src/components/TrackPlayerControllerMini";
 
@@ -76,7 +76,7 @@ import PortalScrollableModal from "@src/components/Modals/PortaledScrollableModa
 import BottomSheetHeader from "@src/components/BottomSheet/BottomSheetHeader";
 import AppAvatar from "@src/components/AppAvatar";
 import ImageCollection from "@src/components/ImageCollection";
-import {aTagRenderer} from "@src/utils/htmlRender";
+import {aTagRenderer, imgRenderer} from "@src/utils/htmlRender";
 import EmbeddedDocumentItem from "@src/components/Documents/EmbeddedDocumentItem";
 import {compose} from "recompose";
 import withProfileNavigation from "@src/components/hocs/withProfileNavigation";
@@ -418,6 +418,7 @@ class TopicsSingleScreen extends Component {
 			title: get(t => titleTrim(t.title.rendered), ""),
 			shortContent: get(t => shortContent(t.short_content), ""),
 			content: get(t => fullContent(t.content.rendered), ""),
+			preview: get(t => fullContent(t.preview_data), ""),
 			author: memberToViewModel(reply._embedded.user[0]),
 			date: get(t => t.date_gmt, ""),
 			status: reply.status,
@@ -484,6 +485,7 @@ class TopicsSingleScreen extends Component {
 				firstItem={index === 0}
 				reply={viewModel}
 				topicClosed={reply.topicClosedForUser}
+				canReply={reply.canReply}
 				textColor={textColor}
 				formatDateFunc={formatDateFunc}
 				global={global}
@@ -695,8 +697,8 @@ class TopicsSingleScreen extends Component {
 								style={{marginBottom: 20}}
 							>
 								{content => (
-									<HTML
-										html={content}
+									<CustomHTML
+										source={{html: content}}
 										tagsStyles={{
 											...tagsStyles,
 											iframe: {
@@ -704,12 +706,18 @@ class TopicsSingleScreen extends Component {
 												marginBottom: 10
 											}
 										}}
-										baseFontStyle={global.textHtml}
-										onLinkPress={attemptDeepLink}
-										staticContentMaxWidth={computedWidth}
-										alterChildren={alterChildrenHTML(computedWidth)}
+										baseStyle={global.textHtml}
+										renderersProps={{
+											a: {onPress: attemptDeepLink(false)}
+										}}
+										contentWidth={computedWidth}
+										allowedAllTags
+										domVisitors={{
+											onElement: elementDomTempering(computedWidth)
+										}}
 										renderers={{
-											a: aTagRenderer(computedWidth)
+											a: aTagRenderer(computedWidth),
+											img: imgRenderer({paddingVertical: 100})
 										}}
 									/>
 								)}
@@ -979,7 +987,7 @@ class TopicsSingleScreen extends Component {
 		const topic = this.extendTopicViewModel(currentTopic);
 		const loading = this.props.replyListProps.isBottomLoadingMore;
 
-		const attemptDeepLink = this.props.attemptDeepLink(false);
+		const attemptDeepLink = this.props.attemptDeepLink;
 
 		if (!topic.canSeeReplies) {
 			return this.renderWithoutReplies(attemptDeepLink);
@@ -1326,6 +1334,7 @@ import withDeeplinkClickHandler from "@src/components/hocs/withDeeplinkClickHand
 import reactotron from "reactotron-react-native";
 import {ClosedLabel} from "@src/components/utils";
 import {isUserAdmin} from "@src/utils/userPermissions";
+import CustomHTML from "@src/components/HTML";
 
 function mapDispatchToProps(dispatch, ownProps) {
 	let singleTopicActions = bindActionCreators(SingleTopicActions, dispatch);
@@ -1592,7 +1601,7 @@ const merge = (stateProps, dispatchProps, ownProps) => {
 
 const TopicsSingleScreenEnh = compose(
 	withProfileNavigation,
-	withTranslation('topic'),
+	withTranslation("topic"),
 	withReportModal,
 	connect(
 		mapStateToProps,
