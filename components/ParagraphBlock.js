@@ -1,8 +1,9 @@
-import HTML from "react-native-render-html";
+// import HTML from "react-native-render-html";
+import CustomHTML from "@src/components/HTML";
 import {View} from "react-native";
 import React, {Component} from "react";
 import PropTypes from "prop-types";
-import {cleanBlockStyle} from "@src/components/Blocks/utils";
+import {cleanBlockStyle, getColorClasses} from "@src/components/Blocks/utils";
 import AppImage from "@src/components/AppImage";
 
 export default class ParagraphBlock extends Component {
@@ -17,13 +18,16 @@ export default class ParagraphBlock extends Component {
 			calcFontSize,
 			htmlHandleClicks,
 			fontFamilyStyle,
-			containerStyle
+			containerStyle,
+			colorClasses
 		} = this.props;
 
 		const textColor = block.style?.parent_style?.textColor;
 		const fontSize = blockStyle.fontSize
 			? calcFontSize(blockStyle.fontSize)
 			: global.textHtml.fontSize;
+
+		const classes = getColorClasses(colorClasses);
 
 		switch (item.type) {
 			case "a":
@@ -38,20 +42,42 @@ export default class ParagraphBlock extends Component {
 					backgroundColor: "transparent"
 				};
 				return (
-					<HTML
-						key={index}
-						html={item.data ? `${item.data}` : " "}
-						containerStyle={containerStyle}
-						baseFontStyle={style}
+					// <HTML
+					// 	key={index}
+					// 	html={item.data ? `${item.data}` : " "}
+					// 	containerStyle={containerStyle}
+					// 	baseFontStyle={style}
+					// 	tagsStyles={{
+					// 		a: {
+					// 			...global.linkContent,
+					// 			...blockStyle,
+					// 			fontSize: fontSize,
+					// 			...fontFamilyStyle
+					// 		}
+					// 	}}
+					// 	onLinkPress={htmlHandleClicks}
+					// />
+					<CustomHTML
+						key={`CustomHTML-${index}`}
+						source={{
+							html: item.data ? `${item.data}` : " "
+						}}
+						baseStyle={{...containerStyle, ...style}}
 						tagsStyles={{
 							a: {
 								...global.linkContent,
-								...blockStyle,
-								fontSize: fontSize,
-								...fontFamilyStyle
+								...fontFamilyStyle,
+								...blockStyle
+							},
+							p: {
+								...fontFamilyStyle,
+								...blockStyle
 							}
 						}}
-						onLinkPress={htmlHandleClicks}
+						classesStyles={classes}
+						renderersProps={{
+							a: {onPress: htmlHandleClicks}
+						}}
 					/>
 				);
 
@@ -67,18 +93,42 @@ export default class ParagraphBlock extends Component {
 				);
 
 			default:
+				// return item.data ? (
+				// 	<HTML
+				// 		key={index}
+				// 		html={item.data}
+				// 		containerStyle={containerStyle}
+				// 		tagsStyles={{
+				// 			a: {
+				// 				...global.linkContent,
+				// 				...blockStyle,
+				// 				...fontFamilyStyle,
+				// 				fontSize: fontSize
+				// 			}
+				// 		}}
+				// 	/>
+				// ) : null;
 				return item.data ? (
-					<HTML
-						key={index}
-						html={item.data}
-						containerStyle={containerStyle}
+					<CustomHTML
+						key={`CustomHTML-${index}`}
+						source={{
+							html: item.data
+						}}
+						baseStyle={{...containerStyle, ...style}}
 						tagsStyles={{
 							a: {
 								...global.linkContent,
-								...blockStyle,
 								...fontFamilyStyle,
-								fontSize: fontSize
+								...blockStyle
+							},
+							p: {
+								...fontFamilyStyle,
+								...blockStyle
 							}
+						}}
+						classesStyles={classes}
+						renderersProps={{
+							a: {onPress: htmlHandleClicks}
 						}}
 					/>
 				) : null;
